@@ -10,8 +10,31 @@ services:
     environment:
       EULA: true
       MEMORY: 8G 
-      #TYPE: CURSEFORGE
-      #CF_SERVER_MOD: https://mediafilez.forgecdn.net/files/4745/395/SteamPunk_Server_Pack_v9.zip
+      ALLOW_FLIGHT: true
+      ENABLE_COMMAND_BLOCK: true
+      MOTD: "Welcome to minecraft-server"
+      ENABLE_WHITELIST: true
+      WHITELIST: #usernames
+      TYPE: CURSEFORGE
+      # URL to server files: All-The-Mods-9
+      CF_SERVER_MOD: https://mediafilez.forgecdn.net/files/5900/31/Server-Files-0.3.5.zip
     volumes:
-      - ./data:/data
+      - /container_data/minecraft:/data
+
+  backup:
+    image: itzg/mc-backup
+    container_name: mc-backup
+    depends_on:
+      minecraft-server:
+        condition: service_healthy
+    environment:
+      RCON_HOST: minecraft-server
+      # since this service waits for mc to be healthy, no initial delay is needed
+      INITIAL_DELAY: 0
+      BACKUP_INTERVAL: 24h
+      PRUNE_BACKUPS_DAYS: 2
+      TZ: Europe/Oslo
+    volumes:
+      - /container_data/minecraft:/data:ro
+      - /container_data/mc-backups:/backups
 
