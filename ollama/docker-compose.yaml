@@ -1,0 +1,31 @@
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    network_mode: "host"
+    environment:
+      OLLAMA_HOST: 127.0.0.1:11434
+      OLLAMA_MAX_LOADED_MODELS: 1
+      OLLAMA_KEEP_ALIVE: -1       #Default: 5m  | -1 = Do not unload model automatically
+      OLLAMA_NUM_PARALLEL: 1      #Default: 1   | Number of concurrent jobs. Required RAM will scale by parallel * context length
+      OLLAMA_KV_CACHE_TYPE: q8_0  #Default: f16 | 8-bit quantization, uses approximately 1/2 the memory of f16.
+
+      #https://docs.ollama.com/context-length
+      #Uncomment to set a fixed context length
+      #OLLAMA_CONTEXT_LENGTH=64000
+
+      #Flash Attention is a feature of most modern models that can significantly reduce memory usage as the context size grows
+      OLLAMA_FLASH_ATTENTION: 1
+    volumes:
+      - ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  ollama:
