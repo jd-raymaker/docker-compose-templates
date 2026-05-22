@@ -1,0 +1,26 @@
+services:
+  vllm:
+    image: vllm/vllm-openai:latest
+    container_name: vllm-server
+    environment:
+      # Optional: Provide your Hugging Face token if deploying gated models (e.g., Llama)
+      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      # Cache downloaded models on the host machine to avoid re-downloading on restart
+      - ~/.cache/huggingface:/root/.cache/huggingface
+    ipc: host # Critical for efficient GPU-CPU communication
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all # Change to a specific number (e.g., 1) or ID if utilizing multi-GPU
+              capabilities: [gpu]
+    # Configure the model to run on startup
+    command: [
+      "--model", "facebook/opt-125m", # Replace with your target model
+      "--port", "8000"
+    ]
+    restart: unless-stopped
