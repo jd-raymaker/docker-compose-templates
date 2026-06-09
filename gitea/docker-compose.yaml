@@ -1,0 +1,83 @@
+networks:
+  gitea_net:
+    driver: bridge
+    external: false
+
+volumes:
+  gitea_data:
+  postgres_data:
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: gitea_db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=gitea
+      - POSTGRES_PASSWORD=SuperSecretDatabasePassword # Change this!
+      - POSTGRES_DB=gitea
+      #- TZ=GMT # Enter your timezone here
+    networks:
+      - gitea_net
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gitea"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  gitea:
+    image: gitea/gitea:1.26
+    container_name: gitea
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__database__DB_TYPE=postgres
+      - GITEA__database__HOST=db:5432
+      - GITEA__database__NAME=gitea
+      - GITEA__database__USER=gitea
+      - GITEA__database__PASSWD=SuperSecretDatabasePassword # Must match the DB password above
+      #- TZ=GMT # Enter your timezone here
+    networks:
+      - gitea_net
+    ports:
+      - "3000:3000" # Web UI
+      - "2222:22"   # SSH Git operations
+    volumes:
+      - gitea_data:/data
+      - ./gitea_backups:/backup # Mounted so Gitea can write dumps here
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+
+  backup:
+    image: docker:cli
+    container_name: gitea_backup_scheduler
+    restart: unless-stopped
+    depends_on:
+      - gitea
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro # Allows container to trigger commands in Gitea
+      - ./gitea_backups:/backup
+    environment:
+      #- TZ=GMT # Enter your timezone here # Ensures the cron job runs in your local timezone
+    entrypoint: ["/bin/sh", "-c"]
+    # This script creates a cron job that runs daily at 2:00 AM.
+    # It triggers Gitea's native backup, then deletes backups older than 7 days.
+    command:
+      - |
+        cat << 'EOF' > /backup.sh
+        #!/bin/sh
+        echo "Starting Gitea backup..."
+        docker exec -u git gitea sh -c 'gitea dump -c /data/gitea/conf/app.ini -f /backup/gitea-dump-$$(date +%Y-%m-%d).zip'
+        echo "Cleaning up backups older than 7 days..."
+        find /backup -name "gitea-dump-*.zip" -mtime +7 -exec rm {} \;
+        echo "Backup routine finished."
+        EOF
+        chmod +x /backup.sh
+        echo "0 2 * * * /backup.sh" > /etc/crontabs/root
+        exec crond -f -l 2
