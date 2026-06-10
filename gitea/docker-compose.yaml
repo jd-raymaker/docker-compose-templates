@@ -73,7 +73,8 @@ services:
         cat << 'EOF' > /backup.sh
         #!/bin/sh
         echo "Starting Gitea backup..."
-        docker exec -u git gitea sh -c 'gitea dump -c /data/gitea/conf/app.ini -f /backup/gitea-dump-$$(date +%Y-%m-%d).zip'
+        docker exec -u git gitea sh -c 'gitea dump -c /data/gitea/conf/app.ini -f /tmp/gitea-dump-$$(date +%Y-%m-%d).zip'
+        docker exec gitea sh -c 'mv /tmp/gitea-dump-*.zip /backup/.'
         echo "Cleaning up backups older than 7 days..."
         find /backup -name "gitea-dump-*.zip" -mtime +7 -exec rm {} \;
         echo "Backup routine finished."
