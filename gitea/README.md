@@ -104,25 +104,26 @@ environment:
 ### Prerequisites
 - Backup file (`.zip` format)
 - Running Docker and Docker Compose
+- `restore.sh` is executable `chmod +x restore.sh`
 
 ### Restore Steps
 
-Run the restore script with the backup file path:
+Run the restore script as `sudo` with the backup file path:
 
 ```bash
-./restore.sh /path/to/gitea-dump-YYYY-MM-DD.zip
+sudo ./restore.sh /path/to/gitea-dump-YYYY-MM-DD.zip
 ```
 
 **Examples:**
 ```bash
-# Backup in current directory
-./restore.sh ./gitea-dump-2026-06-09.zip
+# Backup in gitea_backups directory (default)
+sudo ./restore.sh ./gitea_backups/gitea-dump-2026-06-09.zip
 
 # Backup in parent directory
-./restore.sh ../backups/gitea-dump-2026-06-09.zip
+sudo ./restore.sh ../backups/gitea-dump-2026-06-09.zip
 
 # Absolute path
-./restore.sh /home/user/backups/gitea-dump-2026-06-09.zip
+sudo ./restore.sh /home/user/backups/gitea-dump-2026-06-09.zip
 ```
 
 ### What the Restore Script Does
@@ -146,7 +147,7 @@ The restore process is **fully automated** and performs these steps:
 ### Example Restore Session
 
 ```
-$ ./restore.sh ../downloads/gitea-dump-2026-06-09.zip
+$ sudo ./restore.sh ../downloads/gitea-dump-2026-06-09.zip
 
 =================================================================
 WARNING: This script will OVERWRITE your existing Gitea data!
@@ -190,12 +191,12 @@ docker compose logs db
 
 ### Restore script fails
 - Verify backup file exists: `ls -lh /path/to/backup.zip`
-- Check if Gitea container is running: `docker compose ps`
+- Check if containers are running: `docker compose ps`
 - Review script output for specific error messages
 - Ensure sufficient disk space for extraction
 
 ### Permission denied errors
-- Run with appropriate permissions (may need `sudo`)
+- Run with appropriate permissions (need `sudo`)
 - Ensure volumes are writable by Docker
 
 ## Backup Management
@@ -205,6 +206,7 @@ docker compose logs db
 To create an on-demand backup without waiting for the scheduled job:
 
 ```bash
+#Note: User git does not have access to write to a bind mount (/backup). Dump to /tmp instead
 docker exec -u git gitea gitea dump -c /data/gitea/conf/app.ini -f /tmp/gitea-dump-manual.zip
 docker exec gitea sh -c 'mv /tmp/gitea-dump-manual.zip /backup/.'
 ```
