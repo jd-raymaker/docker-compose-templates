@@ -4,7 +4,7 @@ services:
     container_name: vllm-server
     environment:
       # Optional: Provide your Hugging Face token if deploying gated models (e.g., Llama)
-      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN:-}
+      - HF_TOKEN=${HF_TOKEN}
     ports:
       - "8000:8000"
     volumes:
