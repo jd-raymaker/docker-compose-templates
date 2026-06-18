@@ -233,27 +233,7 @@ find ./gitea_backups -name "gitea-dump-*.zip" -mtime +7 -delete
 - **Monitor logs** for unusual activity
 - **Use HTTPS** in production (configure reverse proxy like nginx)
 
-## Maintenance
-
-### Stop Services
-```bash
-docker compose stop
-```
-
-### Start Services
-```bash
-docker compose start
-```
-
-### Restart Services
-```bash
-docker compose restart
-```
-
-### Remove All Containers & Volumes (Destructive)
-```bash
-docker compose down -v
-```
+## Useful Commands
 
 ### View Logs
 ```bash
@@ -265,8 +245,6 @@ docker compose logs -f gitea
 docker compose logs -f db
 docker compose logs -f backup
 ```
-
-## Useful Commands
 
 ### Access Gitea Database Directly
 ```bash
